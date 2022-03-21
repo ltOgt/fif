@@ -21,15 +21,17 @@ function print_usage ()
 
 function find_in_file
 {
-	file=$1
+	file="$1"
 	if [ -z $caseSensitive ]; then
-		result=$(cat -n $file | GREP_COLOR='30;47' grep --ignore-case -A $grepA -B $grepB --color=always -E "$search_string")
+		result=$(cat -n "$file" | GREP_COLOR='30;47' grep --ignore-case -A $grepA -B $grepB --color=always -E "$search_string")
 	else
-		result=$(cat -n $file | GREP_COLOR='30;47' grep -A $grepA -B $grepB --color=always -E "$search_string")
+		result=$(cat -n "$file" | GREP_COLOR='30;47' grep -A $grepA -B $grepB --color=always -E "$search_string")
 	fi
 	if ! [ -z "$result" ]; then
 		echo "[f]=$file" | GREP_COLOR='30;47' grep --color=always -E "$grepF"
+		echo "[r] ................................. <"
 		echo "$result"
+		echo "[r] ................................. >"
 	fi
 }
 
@@ -153,17 +155,18 @@ fi
 # script
 if ! [ -z $file ]; then
 	# if the path points to a file just search in that file
-	find_in_file $file
+	find_in_file "$file"
 elif [ -z $maxdepth ]; then
+	# while instead of for: https://stackoverflow.com/a/9612560/6862386
 	# if no maxdepth is specified
-	for file in $(find $pth -type f | grep -E "$grepF")
+	find $pth -type f -print0 | while read -d $'\0' file
 	do
-		find_in_file $file
+		! [ -z "$(echo "$file" | grep -E "$grepF")" ] && find_in_file "$file"
 	done
 else
-	for file in $(find $pth -maxdepth $maxdepth -type f | grep -E "$grepF")
+	find $pth -maxdepth $maxdepth -type f -print0 | while read -d $'\0' file
 	do
-		find_in_file $file
+		! [ -z "$(echo "$file" | grep -E "$grepF")" ] && find_in_file "$file"
 	done
 fi
 
